@@ -1,0 +1,14 @@
+{
+  "name": "DailyApp - Smart Expense Tracker",
+  "short_name": "DailyApp",
+  "description": "Track expenses, get AI financial advice, and manage your schedule.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f0f2f8",
+  "theme_color": "#4a6cf7",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
