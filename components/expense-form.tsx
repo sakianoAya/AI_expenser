@@ -38,6 +38,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
   const { t, locale, currency } = useLocale()
   const isEditing = !!expense
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
 
   const [amount, setAmount] = useState(expense ? String(expense.amount) : "")
   const [categoryId, setCategoryId] = useState(expense?.category_id || "")
@@ -257,38 +258,46 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
         ) : (
           <div className="flex gap-2">
             <button
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={uploading || scanning}
+              className="flex flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl bg-secondary border-2 border-transparent hover:border-border py-4 text-[13px] font-bold text-secondary-foreground shadow-sm transition-all active:scale-[0.98] disabled:opacity-80"
+            >
+              <Camera className="h-6 w-6 text-primary" />
+              <span>{locale === "zh-TW" ? "拍照掃描" : "Take Photo"}</span>
+            </button>
+            <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading || scanning}
-              className="relative flex flex-1 items-center justify-center gap-3 overflow-hidden rounded-2xl bg-secondary border-2 border-transparent hover:border-border py-4 text-[15px] font-bold text-secondary-foreground shadow-sm transition-all active:scale-[0.98] disabled:opacity-80"
+              className="flex flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-2xl bg-secondary border-2 border-transparent hover:border-border py-4 text-[13px] font-bold text-secondary-foreground shadow-sm transition-all active:scale-[0.98] disabled:opacity-80"
             >
-              {(uploading || scanning) ? (
-                <>
-                  <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <span className="text-primary font-semibold">
-                    {locale === "zh-TW" ? "AI 收據解析中..." : "AI Scanning..."}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span>{locale === "zh-TW" ? "AI 智能掃描收據" : "AI Receipt Scan"}</span>
-                </>
-              )}
+              <ImageIcon className="h-6 w-6 text-primary" />
+              <span>{locale === "zh-TW" ? "上傳照片" : "Upload Image"}</span>
             </button>
+
+            {/* Hidden inputs for Camera and File selection */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleImageUpload(file)
+              }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleImageUpload(file)
+              }}
+            />
           </div>
         )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) handleImageUpload(file)
-          }}
-        />
       </div>
 
       {/* Save Button */}
