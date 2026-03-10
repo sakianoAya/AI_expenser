@@ -76,16 +76,24 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
     try {
       // 1. Scan with Gemini immediately
       fetch("/api/ai/receipt", { method: "POST", body: formData })
-        .then(res => res.json())
-        .then(data => {
+        .then(async res => {
+          const data = await res.json()
+          if (!res.ok) {
+            throw new Error(data.error || "Failed to scan receipt")
+          }
           if (data.data) {
             const aiData = data.data
             if (aiData.amount && !amount) setAmount(String(aiData.amount))
             if (aiData.date && !date) setDate(aiData.date)
             if (aiData.description && !description) setDescription(aiData.description)
+            // Optional: alert success
+            // alert(locale === "zh-TW" ? "掃描成功！" : "Scan successful!")
           }
         })
-        .catch(err => console.error("Scan failed:", err))
+        .catch(err => {
+          console.error("Scan failed:", err)
+          alert(locale === "zh-TW" ? `掃描失敗: ${err.message}` : `Scan failed: ${err.message}`)
+        })
         .finally(() => setScanning(false))
 
       // 2. Upload to Blob storage (optional, fail gracefully)
@@ -97,8 +105,9 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
         .catch(err => console.error("Upload failed:", err))
         .finally(() => setUploading(false))
         
-    } catch (err) {
+    } catch (err: any) {
       console.error("Handling image failed:", err)
+      alert(locale === "zh-TW" ? `圖片處理失敗: ${err.message}` : `Image handling failed: ${err.message}`)
       setUploading(false)
       setScanning(false)
     }
