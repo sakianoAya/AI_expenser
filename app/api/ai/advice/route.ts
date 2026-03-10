@@ -3,10 +3,12 @@ import { createClient } from "@/lib/supabase/server"
 import { OWNER_ID } from "@/lib/constants"
 import { NextResponse, type NextRequest } from "next/server"
 
-const apiKey = process.env.GEMINI_API_KEY
-const ai = new GoogleGenAI({ apiKey: apiKey || "" })
+export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
+  const apiKey = process.env.GEMINI_API_KEY
+  const ai = new GoogleGenAI({ apiKey: apiKey || "" })
+
   try {
     const { messages, locale = "zh-TW" } = await request.json()
 
