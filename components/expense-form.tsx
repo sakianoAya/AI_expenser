@@ -64,7 +64,6 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
   async function handleImageUpload(file: File) {
     if (!file) return
     
-    // We run the file upload to our storage and the AI scan concurrently
     setUploading(true)
     setScanning(true)
 
@@ -74,15 +73,8 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
     formData.append("locale", locale)
 
     try {
-      // 1. Upload to Blob storage
-      const uploadPromise = fetch("/api/upload", { method: "POST", body: formData })
-        .then(res => res.json())
-        .then(data => {
-          if (data.url) setReceiptUrl(data.url)
-        })
-
-      // 2. Scan with Gemini
-      const scanPromise = fetch("/api/ai/receipt", { method: "POST", body: formData })
+      // 1. Scan with Gemini immediately
+      fetch("/api/ai/receipt", { method: "POST", body: formData })
         .then(res => res.json())
         .then(data => {
           if (data.data) {
@@ -92,11 +84,20 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
             if (aiData.description && !description) setDescription(aiData.description)
           }
         })
+        .catch(err => console.error("Scan failed:", err))
+        .finally(() => setScanning(false))
 
-      await Promise.allSettled([uploadPromise, scanPromise])
+      // 2. Upload to Blob storage (optional, fail gracefully)
+      fetch("/api/upload", { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          if (data.url) setReceiptUrl(data.url)
+        })
+        .catch(err => console.error("Upload failed:", err))
+        .finally(() => setUploading(false))
+        
     } catch (err) {
-      console.error("Upload/Scan failed:", err)
-    } finally {
+      console.error("Handling image failed:", err)
       setUploading(false)
       setScanning(false)
     }
