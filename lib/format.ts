@@ -1,6 +1,6 @@
 import type { Locale } from "./i18n"
 
-export function formatCurrency(amount: number, currency = "TWD", locale: Locale = "zh-TW"): string {
+export function formatCurrency(amount: number, currency = "JPY", locale: Locale = "zh-TW"): string {
   return new Intl.NumberFormat(locale === "zh-TW" ? "zh-TW" : "en-US", {
     style: "currency",
     currency,

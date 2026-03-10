@@ -86,7 +86,7 @@ export const translations = {
       delete: "刪除",
       edit: "編輯",
       back: "返回",
-      currency: "TWD",
+      currency: "JPY",
       noData: "沒有資料",
     },
     settings: {
@@ -182,7 +182,7 @@ export const translations = {
       delete: "Delete",
       edit: "Edit",
       back: "Back",
-      currency: "TWD",
+      currency: "JPY",
       noData: "No data",
     },
     settings: {

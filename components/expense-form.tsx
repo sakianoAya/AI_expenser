@@ -35,7 +35,7 @@ type Props = {
 }
 
 export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
-  const { t, locale } = useLocale()
+  const { t, locale, currency } = useLocale()
   const isEditing = !!expense
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -182,7 +182,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
             className="h-16 flex-1 bg-transparent text-4xl font-extrabold text-foreground outline-none placeholder:text-muted-foreground/30 font-mono tracking-tighter"
             autoFocus
           />
-          <span className="text-sm font-bold text-muted-foreground">TWD</span>
+          <span className="text-sm font-bold text-muted-foreground">{currency}</span>
         </div>
       </div>
 

@@ -43,7 +43,7 @@ async function fetchAnalytics(monthKey: string) {
 }
 
 export function AnalyticsView() {
-  const { t, locale } = useLocale()
+  const { t, locale, currency } = useLocale()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [view, setView] = useState<"category" | "date">("category")
 
@@ -111,13 +111,13 @@ export function AnalyticsView() {
         <div className="flex flex-col gap-1 rounded-2xl bg-card p-4 border border-border">
           <span className="text-xs text-muted-foreground">{t.analytics.total}</span>
           <span className="text-xl font-bold text-foreground">
-            {isLoading ? "..." : formatCurrency(total, "TWD", locale)}
+            {isLoading ? "..." : formatCurrency(total, currency, locale)}
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-2xl bg-card p-4 border border-border">
           <span className="text-xs text-muted-foreground">{t.analytics.average}</span>
           <span className="text-xl font-bold text-foreground">
-            {isLoading ? "..." : formatCurrency(dailyAvg, "TWD", locale)}
+            {isLoading ? "..." : formatCurrency(dailyAvg, currency, locale)}
             <span className="text-xs font-normal text-muted-foreground">/{locale === "zh-TW" ? "天" : "day"}</span>
           </span>
         </div>
@@ -164,7 +164,7 @@ export function AnalyticsView() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => formatCurrency(value, "TWD", locale)}
+                    formatter={(value: number) => formatCurrency(value, currency, locale)}
                     contentStyle={{
                       borderRadius: "12px",
                       border: "1px solid var(--border)",
@@ -191,7 +191,7 @@ export function AnalyticsView() {
                   <div className="flex flex-1 flex-col gap-1">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-foreground">{cat.name}</span>
-                      <span className="text-sm font-semibold text-foreground">{formatCurrency(cat.total, "TWD", locale)}</span>
+                      <span className="text-sm font-semibold text-foreground">{formatCurrency(cat.total, currency, locale)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
@@ -219,7 +219,7 @@ export function AnalyticsView() {
               />
               <YAxis hide />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value, "TWD", locale)}
+                formatter={(value: number) => formatCurrency(value, currency, locale)}
                 labelFormatter={(label) => `${locale === "zh-TW" ? "第" : "Day "}${label}${locale === "zh-TW" ? "天" : ""}`}
                 contentStyle={{
                   borderRadius: "12px",

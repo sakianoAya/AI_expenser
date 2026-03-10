@@ -50,7 +50,7 @@ async function fetchCategories() {
 }
 
 export function ExpensesView() {
-  const { t, locale } = useLocale()
+  const { t, locale, currency } = useLocale()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -131,7 +131,7 @@ export function ExpensesView() {
         <div className="flex flex-col items-center">
           <span className="text-base font-semibold text-foreground">{monthLabel}</span>
           <span className="text-xs text-muted-foreground">
-            {t.analytics.total}: {formatCurrency(monthTotal, "TWD", locale)}
+            {t.analytics.total}: {formatCurrency(monthTotal, currency, locale)}
           </span>
         </div>
         <button onClick={nextMonth} className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
@@ -159,7 +159,7 @@ export function ExpensesView() {
                 <div className="flex items-center justify-between px-1">
                   <span className="text-xs font-medium text-muted-foreground">{formatDate(date, locale)}</span>
                   <span className="text-xs font-medium text-muted-foreground">
-                    -{formatCurrency(dayTotal, "TWD", locale)}
+                    -{formatCurrency(dayTotal, currency, locale)}
                   </span>
                 </div>
                 {items.map((expense) => {
@@ -189,7 +189,7 @@ export function ExpensesView() {
                         )}
                       </div>
                       <span className="shrink-0 text-sm font-semibold text-foreground">
-                        -{formatCurrency(Number(expense.amount), "TWD", locale)}
+                        -{formatCurrency(Number(expense.amount), currency, locale)}
                       </span>
                     </button>
                   )

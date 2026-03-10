@@ -6,6 +6,8 @@ import { type Locale, translations, type TranslationKeys } from "./i18n"
 type LocaleContextType = {
   locale: Locale
   setLocale: (locale: Locale) => void
+  currency: string
+  setCurrency: (currency: string) => void
   t: TranslationKeys
 }
 
@@ -13,11 +15,16 @@ const LocaleContext = createContext<LocaleContextType | null>(null)
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("zh-TW")
+  const [currency, setCurrencyState] = useState<string>("JPY")
 
   useEffect(() => {
     const saved = localStorage.getItem("locale") as Locale | null
     if (saved && (saved === "zh-TW" || saved === "en")) {
       setLocaleState(saved)
+    }
+    const savedCurrency = localStorage.getItem("currency")
+    if (savedCurrency) {
+      setCurrencyState(savedCurrency)
     }
   }, [])
 
@@ -26,8 +33,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("locale", newLocale)
   }, [])
 
+  const setCurrency = useCallback((newCurrency: string) => {
+    setCurrencyState(newCurrency)
+    localStorage.setItem("currency", newCurrency)
+  }, [])
+
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t: translations[locale] }}>
+    <LocaleContext.Provider value={{ locale, setLocale, currency, setCurrency, t: translations[locale] }}>
       {children}
     </LocaleContext.Provider>
   )

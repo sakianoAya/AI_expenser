@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { useLocale } from "@/lib/locale-context"
-import { Bell, Clock, MessageSquare, ChevronLeft, Loader2 } from "lucide-react"
+import { Bell, Clock, MessageSquare, ChevronLeft, Loader2, Globe, DollarSign } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import { OWNER_ID } from "@/lib/constants"
 
 export default function SettingsPage() {
-  const { locale } = useLocale()
+  const { t, locale, setLocale, currency, setCurrency } = useLocale()
   const router = useRouter()
   
   const [isSupported, setIsSupported] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
   
   const [time, setTime] = useState("20:00")
   const [message, setMessage] = useState(
@@ -92,6 +95,29 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleLanguageChange(newLocale: "zh-TW" | "en") {
+    setLocale(newLocale)
+    try {
+      const supabase = createClient()
+      await supabase.from("profiles").update({ preferred_locale: newLocale }).eq("id", OWNER_ID)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  async function handleCurrencyChange(newCurrency: string) {
+    setCurrency(newCurrency)
+    setSavingProfile(true)
+    try {
+      const supabase = createClient()
+      await supabase.from("profiles").update({ preferred_currency: newCurrency }).eq("id", OWNER_ID)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
       {/* Header */}
@@ -112,6 +138,56 @@ export default function SettingsPage() {
       </header>
 
       <main className="flex flex-col gap-6 p-4">
+        {/* Preferences Section */}
+        <section className="flex flex-col gap-4 rounded-3xl bg-card border border-border p-5">
+          <div className="flex flex-col gap-4">
+            <h2 className="font-bold text-foreground">
+              {locale === "zh-TW" ? "個人偏好" : "Preferences"}
+            </h2>
+            
+            {/* Language */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-foreground">
+                  <Globe className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium text-foreground">{t.settings.language}</span>
+              </div>
+              <select
+                value={locale}
+                onChange={(e) => handleLanguageChange(e.target.value as "zh-TW" | "en")}
+                className="h-10 rounded-xl bg-secondary px-3 text-sm font-medium text-foreground outline-none border-0 ring-0 focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="zh-TW">繁體中文</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            {/* Currency */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-foreground">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium text-foreground">{t.settings.currency}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {savingProfile && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                <select
+                  value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  className="h-10 rounded-xl bg-secondary px-3 text-sm font-medium text-foreground outline-none border-0 ring-0 focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="JPY">JPY</option>
+                  <option value="TWD">TWD</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Push Notification Section */}
         <section className="flex flex-col gap-4 rounded-3xl bg-card border border-border p-5">
           <div className="flex items-center gap-3">

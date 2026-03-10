@@ -44,7 +44,7 @@ async function fetchDashboardData() {
 }
 
 export function DashboardHome({ profile }: { profile: Profile | null }) {
-  const { t, locale, setLocale } = useLocale()
+  const { t, locale, setLocale, currency } = useLocale()
   const { data, isLoading } = useSWR("dashboard-data", fetchDashboardData, {
     refreshInterval: 30000,
   })
@@ -79,13 +79,13 @@ export function DashboardHome({ profile }: { profile: Profile | null }) {
           <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
           <span className="text-xs font-medium opacity-80">{t.home.todaySpent}</span>
           <span className="text-3xl font-extrabold tracking-tight mt-1">
-            {isLoading ? "..." : formatCurrency(data?.todayTotal || 0, "TWD", locale)}
+            {isLoading ? "..." : formatCurrency(data?.todayTotal || 0, currency, locale)}
           </span>
         </div>
         <div className="flex flex-col gap-1 rounded-[2rem] bg-gradient-to-br from-card to-muted/30 p-5 shadow-md border border-border/50 relative overflow-hidden">
           <span className="text-xs font-medium text-muted-foreground">{t.home.monthSpent}</span>
           <span className="text-2xl font-bold text-foreground mt-1">
-            {isLoading ? "..." : formatCurrency(data?.monthTotal || 0, "TWD", locale)}
+            {isLoading ? "..." : formatCurrency(data?.monthTotal || 0, currency, locale)}
           </span>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function DashboardHome({ profile }: { profile: Profile | null }) {
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground">{t.home.budget}</span>
             <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-              {formatCurrency(budget, "TWD", locale)}
+              {formatCurrency(budget, currency, locale)}
             </span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-secondary/80 inner-shadow-sm">
@@ -115,7 +115,7 @@ export function DashboardHome({ profile }: { profile: Profile | null }) {
           <div className="flex items-center justify-between mt-1">
             <span className="text-xs text-muted-foreground">{t.home.remaining}</span>
             <span className={`text-sm font-bold ${remaining < 0 ? "text-destructive" : "text-primary"}`}>
-              {formatCurrency(remaining, "TWD", locale)}
+              {formatCurrency(remaining, currency, locale)}
             </span>
           </div>
         </div>
@@ -178,7 +178,7 @@ export function DashboardHome({ profile }: { profile: Profile | null }) {
                     )}
                   </div>
                   <span className="text-base font-bold text-foreground">
-                    -{formatCurrency(Number(expense.amount), "TWD", locale)}
+                    -{formatCurrency(Number(expense.amount), currency, locale)}
                   </span>
                 </Link>
               )
