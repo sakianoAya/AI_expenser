@@ -20,7 +20,10 @@ export function BottomNav() {
   const { t } = useLocale()
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 p-4 safe-area-pb pb-6 pointer-events-none">
+    <div 
+      className="fixed inset-x-0 bottom-0 z-50 p-4 pointer-events-none"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)' }}
+    >
       <nav className="pointer-events-auto mx-auto flex h-16 max-w-md items-center justify-around rounded-3xl border border-border/50 bg-background/70 px-2 shadow-2xl backdrop-blur-2xl dark:bg-card/60 dark:shadow-black/50 overflow-hidden">
         {navItems.map((item) => {
           const isActive =
