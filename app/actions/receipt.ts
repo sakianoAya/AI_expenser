@@ -22,8 +22,8 @@ export async function analyzeReceiptAction(base64Data: string, mimeType: string,
     const ai = new GoogleGenAI({ apiKey })
 
     const langPrompt = locale === "zh-TW" 
-      ? "請從這張收據中擷取資訊，並以指定的 JSON 格式回傳。金額只能是數字。日期格式必須為 YYYY-MM-DD。如果是電子發票或電子支付憑證，也請照樣辨識。不要回傳任何 Markdown 代碼區塊(```json)，直接回傳 JSON 字串。"
-      : "Please extract information from this receipt and return it in the specified JSON format. Amount must be a number. Date format must be YYYY-MM-DD. Identify electronic receipts as well. DO NOT wrap the output in markdown code blocks like ```json, just return the raw JSON object string."
+      ? "請從這張實體收據（多為日文）中擷取資訊，並以指定的 JSON 格式回傳。1. 金額(amount)保留純數字(如268) 2. 日期(date)格式為YYYY-MM-DD 3. 店家名稱(storeName)請保留原文 4. 把所有購買品項(items)獨立出來(含名稱與價格) 5. 若有優惠券或折扣(coupon)請擷取，無則留空。不要回傳 markdown 代碼區塊，直接回傳 JSON。"
+      : "Please extract info from this Japanese receipt into JSON. 1. Amount is number. 2. Date is YYYY-MM-DD. 3. storeName keeps original text. 4. items array contains name and price. 5. coupon if any. DO NOT wrap output in markdown, just raw JSON."
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -48,9 +48,20 @@ export async function analyzeReceiptAction(base64Data: string, mimeType: string,
           properties: {
             amount: { type: Type.NUMBER, description: "The total amount of the transaction." },
             date: { type: Type.STRING, description: "The date of the transaction in YYYY-MM-DD format." },
-            description: { type: Type.STRING, description: "The name of the store or main item purchased." }
+            storeName: { type: Type.STRING, description: "The name of the store or location." },
+            coupon: { type: Type.STRING, description: "Any coupon, point, or discount info if present." },
+            items: { 
+              type: Type.ARRAY, 
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  price: { type: Type.NUMBER }
+                }
+              }
+            }
           },
-          required: ["amount", "date", "description"]
+          required: ["amount", "date"]
         }
       }
     })
@@ -58,10 +69,39 @@ export async function analyzeReceiptAction(base64Data: string, mimeType: string,
     const text = response.text || "{}"
     console.log("Server Action Gemini Output:", text)
 
-    let result
+    let result: any = {}
     try {
       const cleanedText = text.replace(/```(json)?|```/gi, "").trim()
       result = JSON.parse(cleanedText)
+      
+      // Post-process the description from the structured data
+      if (!result.raw) {
+        let finalDescription = ""
+        
+        // Location
+        if (result.storeName) {
+          finalDescription += `📍 ${locale === "zh-TW" ? "地點" : "Location"}：${result.storeName}\n`
+        }
+        
+        // Items
+        if (result.items && Array.isArray(result.items) && result.items.length > 0) {
+          finalDescription += `📝 ${locale === "zh-TW" ? "明細" : "Items"}：\n`
+          result.items.forEach((item: any) => {
+            const priceStr = item.price ? ` $${item.price}` : ""
+            finalDescription += `- ${item.name}${priceStr}\n`
+          })
+        }
+        
+        // Coupon
+        if (result.coupon) {
+          finalDescription += `🎟️ ${locale === "zh-TW" ? "優惠" : "Coupon"}：${result.coupon}\n`
+        }
+
+        // Set it back to description property that the client expects
+        result.description = finalDescription.trim()
+        
+        // Remove massive arrays from payload if needed, though they are fine
+      }
     } catch {
       console.warn("Failed to parse JSON, returning raw format")
       result = { raw: text }

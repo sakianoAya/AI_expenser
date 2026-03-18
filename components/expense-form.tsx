@@ -286,12 +286,11 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
       {/* Description */}
       <div className="flex flex-col gap-2">
         <label className="text-sm font-bold text-muted-foreground">{t.expenses.description}</label>
-        <input
-          type="text"
+        <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={locale === "zh-TW" ? "備註（選填）" : "Note (optional)"}
-          className="h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 text-foreground text-base font-medium placeholder:text-muted-foreground/50 transition-all outline-none"
+          className="min-h-[100px] resize-y rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 py-4 text-foreground text-base font-medium placeholder:text-muted-foreground/50 transition-all outline-none"
         />
       </div>
 
