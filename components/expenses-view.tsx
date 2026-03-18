@@ -43,10 +43,19 @@ async function fetchExpenses(monthKey: string) {
   return data || []
 }
 
+const DEFAULT_CATEGORIES = [
+  { id: "c1", name_zh: "飲食", name_en: "Food", icon: "utensils", color: "#F59E0B", group_name: "living", sort_order: 1 },
+  { id: "c2", name_zh: "交通", name_en: "Transport", icon: "car", color: "#3B82F6", group_name: "living", sort_order: 2 },
+  { id: "c3", name_zh: "日用品", name_en: "Daily", icon: "shopping-bag", color: "#10B981", group_name: "living", sort_order: 3 },
+  { id: "c4", name_zh: "娛樂", name_en: "Entertainment", icon: "gamepad-2", color: "#8B5CF6", group_name: "entertainment", sort_order: 4 },
+  { id: "c5", name_zh: "購物", name_en: "Shopping", icon: "shopping-cart", color: "#EC4899", group_name: "entertainment", sort_order: 5 },
+  { id: "c6", name_zh: "居住", name_en: "Housing", icon: "home", color: "#6B7280", group_name: "fixed", sort_order: 6 },
+]
+
 async function fetchCategories() {
   const supabase = createClient()
   const { data } = await supabase.from("categories").select("*").eq("user_id", OWNER_ID).order("sort_order")
-  return data || []
+  return data && data.length > 0 ? data : DEFAULT_CATEGORIES
 }
 
 export function ExpensesView() {
