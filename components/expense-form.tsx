@@ -204,7 +204,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-5 pt-safe-top pb-32 animate-in slide-in-from-bottom-5 fade-in duration-300">
+    <div className="flex flex-col gap-6 p-5 pt-safe-top pb-32 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-x-hidden w-full max-w-full">
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <button
@@ -237,7 +237,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="h-16 flex-1 bg-transparent text-4xl font-extrabold text-foreground outline-none placeholder:text-muted-foreground/30 font-mono tracking-tighter"
+            className="h-16 flex-1 min-w-0 bg-transparent text-4xl font-extrabold text-foreground outline-none placeholder:text-muted-foreground/30 font-mono tracking-tighter"
             autoFocus
           />
           <span className="text-sm font-bold text-muted-foreground">{currency}</span>
@@ -282,7 +282,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 text-foreground text-base font-medium transition-all outline-none"
+          className="w-full h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 text-foreground text-base font-medium transition-all outline-none"
         />
       </div>
 
@@ -293,7 +293,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={locale === "zh-TW" ? "備註（選填）" : "Note (optional)"}
-          className="min-h-[100px] resize-y rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 py-4 text-foreground text-base font-medium placeholder:text-muted-foreground/50 transition-all outline-none"
+          className="w-full min-h-[100px] resize-y rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 py-4 text-foreground text-base font-medium placeholder:text-muted-foreground/50 transition-all outline-none"
         />
       </div>
 
