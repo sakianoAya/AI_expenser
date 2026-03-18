@@ -7,6 +7,7 @@ import { getCategoryIcon } from "@/lib/category-icons"
 import { OWNER_ID } from "@/lib/constants"
 import { ArrowLeft, Camera, Upload, X, Trash2, ImageIcon, Sparkles, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { analyzeReceiptAction } from "@/app/actions/receipt"
 
 type Category = {
   id: string
@@ -62,41 +63,84 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
     fixed: locale === "zh-TW" ? "固定支出" : "Fixed",
   }
 
+  // Function to compress image before uploading/scanning
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement("canvas")
+          let width = img.width
+          let height = img.height
+          const MAX_SIZE = 1024
+
+          // Calculate new dimensions while keeping aspect ratio
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width
+              width = MAX_SIZE
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height
+              height = MAX_SIZE
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext("2d")
+          if (!ctx) return reject("Canvas error")
+
+          ctx.drawImage(img, 0, 0, width, height)
+          // Compress to JPEG with 0.8 quality
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8)
+          // Extract base64 without prefix
+          const base64 = dataUrl.split(",")[1]
+          resolve(base64)
+        }
+        img.onerror = (error) => reject(error)
+      }
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
   async function handleImageUpload(file: File) {
     if (!file) return
     
     setUploading(true)
     setScanning(true)
 
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("receipt", file)
-    formData.append("locale", locale)
-
     try {
-      // 1. Scan with Gemini immediately
-      fetch("/api/ai/receipt", { method: "POST", body: formData })
-        .then(async res => {
-          const data = await res.json()
-          if (!res.ok) {
-            throw new Error(data.error || "Failed to scan receipt")
+      // 1. Compress image locally (vital for stopping "payload too large" errors)
+      const base64Image = await compressImage(file)
+      
+      // 2. Scan with Gemini immediately using Server Action
+      analyzeReceiptAction(base64Image, "image/jpeg", locale)
+        .then((res: { success: boolean; data?: any; error?: string }) => {
+          if (!res.success) {
+            throw new Error(res.error || "Failed to scan receipt")
           }
-          if (data.data) {
-            const aiData = data.data
+          if (res.data) {
+            const aiData = res.data
             if (aiData.amount && !amount) setAmount(String(aiData.amount))
             if (aiData.date && !date) setDate(aiData.date)
             if (aiData.description && !description) setDescription(aiData.description)
-            // Optional: alert success
-            // alert(locale === "zh-TW" ? "掃描成功！" : "Scan successful!")
+            // Optional success toast here
           }
         })
-        .catch(err => {
+        .catch((err: Error) => {
           console.error("Scan failed:", err)
           alert(locale === "zh-TW" ? `掃描失敗: ${err.message}` : `Scan failed: ${err.message}`)
         })
         .finally(() => setScanning(false))
 
-      // 2. Upload to Blob storage (optional, fail gracefully)
+      // 3. Upload to Blob storage (using the original API fetch, but this can run in parallel)
+      const formData = new FormData()
+      formData.append("file", file)
       fetch("/api/upload", { method: "POST", body: formData })
         .then(res => res.json())
         .then(data => {
