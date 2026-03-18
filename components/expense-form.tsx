@@ -173,14 +173,17 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
       }
 
       if (isEditing) {
-        await supabase.from("expenses").update(payload).eq("id", expense.id)
+        const { error } = await supabase.from("expenses").update(payload).eq("id", expense.id)
+        if (error) throw error
       } else {
-        await supabase.from("expenses").insert(payload)
+        const { error } = await supabase.from("expenses").insert(payload)
+        if (error) throw error
       }
 
       onSaved()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Save failed:", err)
+      alert(locale === "zh-TW" ? `儲存失敗: ${err.message}` : `Save failed: ${err.message}`)
     } finally {
       setSaving(false)
     }
