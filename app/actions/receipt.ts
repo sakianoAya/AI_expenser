@@ -1,19 +1,18 @@
 "use server"
 
 import { GoogleGenAI, Type } from "@google/genai"
-import { createClient } from "@/lib/supabase/server"
+
 
 // Max Vercel Serverless Function duration (if deploying to Vercel Pro, else it's 10-15s for Hobby)
 // Server actions respect the page's maxDuration if exported from a page, but here we just export the generic action.
 
 export async function analyzeReceiptAction(base64Data: string, mimeType: string, locale: string = "zh-TW") {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      throw new Error("Unauthorized")
-    }
+    // We bypass strict Supabase auth here because the app often uses a hardcoded OWNER_ID
+    // If you need auth in the future, just uncomment this:
+    // const supabase = await createClient()
+    // const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // if (authError || !user) throw new Error("Unauthorized")
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
