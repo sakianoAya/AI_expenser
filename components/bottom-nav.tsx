@@ -21,10 +21,10 @@ export function BottomNav() {
 
   return (
     <div 
-      className="fixed inset-x-0 bottom-0 z-50 p-4 pointer-events-none"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)' }}
+      className="fixed inset-x-0 bottom-0 z-50 pointer-events-auto border-t border-border/50 bg-background/80 shadow-[0_-10px_30px_rgb(0,0,0,0.05)] backdrop-blur-2xl dark:bg-card/80 dark:shadow-black/20"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <nav className="pointer-events-auto mx-auto flex h-16 max-w-md items-center justify-around rounded-3xl border border-border/50 bg-background/70 px-2 shadow-2xl backdrop-blur-2xl dark:bg-card/60 dark:shadow-black/50 overflow-hidden">
+      <nav className="mx-auto flex h-16 w-full max-w-md items-center justify-around px-2">
         {navItems.map((item) => {
           const isActive =
             item.href === "/dashboard"
