@@ -44,24 +44,30 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
   const [amount, setAmount] = useState(expense ? String(expense.amount) : "")
   const [categoryId, setCategoryId] = useState(expense?.category_id || "")
   const [description, setDescription] = useState(expense?.description || "")
-  const [date, setDate] = useState(expense?.expense_date || new Date().toISOString().split("T")[0])
+  const getLocalDatetime = (dateString?: string) => {
+    if (dateString) {
+      const d = new Date(dateString)
+      // If the date string doesn't include time, default time to current local time or 12:00
+      if (!dateString.includes('T')) {
+        const now = new Date()
+        d.setHours(now.getHours(), now.getMinutes(), 0, 0)
+      }
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+      return d.toISOString().slice(0, 16)
+    }
+    const d = new Date()
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    return d.toISOString().slice(0, 16)
+  }
+
+  const [date, setDate] = useState(getLocalDatetime(expense?.expense_date))
   const [receiptUrl, setReceiptUrl] = useState(expense?.receipt_url || "")
   const [uploading, setUploading] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
 
-  const groupedCategories = categories.reduce<Record<string, Category[]>>((acc, cat) => {
-    if (!acc[cat.group_name]) acc[cat.group_name] = []
-    acc[cat.group_name].push(cat)
-    return acc
-  }, {})
-
-  const groupLabels: Record<string, string> = {
-    living: locale === "zh-TW" ? "基本生活" : "Living",
-    entertainment: locale === "zh-TW" ? "娛樂休閒" : "Entertainment",
-    fixed: locale === "zh-TW" ? "固定支出" : "Fixed",
-  }
+  // Removed grouped categories as per user request to have a flat list
 
   // Function to compress image before uploading/scanning
   const compressImage = (file: File): Promise<string> => {
@@ -127,7 +133,13 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
           if (res.data) {
             const aiData = res.data
             if (aiData.amount && !amount) setAmount(String(aiData.amount))
-            if (aiData.date && !date) setDate(aiData.date)
+            if (aiData.date) {
+               // aiData.date is YYYY-MM-DD
+               const now = new Date()
+               const hh = now.getHours().toString().padStart(2, '0')
+               const mm = now.getMinutes().toString().padStart(2, '0')
+               setDate(aiData.date.length === 10 ? `${aiData.date}T${hh}:${mm}` : aiData.date)
+            }
             if (aiData.description && !description) setDescription(aiData.description)
             // Optional success toast here
           }
@@ -169,7 +181,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
         category_id: categoryId,
         description: description || null,
         receipt_url: receiptUrl || null,
-        expense_date: date,
+        expense_date: new Date(date).toISOString(),
       }
 
       if (isEditing) {
@@ -247,43 +259,40 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
       {/* Category Selection */}
       <div className="flex flex-col gap-3">
         <label className="text-sm font-bold text-muted-foreground">{t.expenses.category}</label>
-        {Object.entries(groupedCategories).map(([group, cats]) => (
-          <div key={group} className="flex flex-col gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 ml-1">{groupLabels[group] || group}</span>
-            <div className="flex flex-wrap gap-2.5">
-              {cats.map((cat) => {
-                const Icon = getCategoryIcon(cat.icon)
-                const isSelected = categoryId === cat.id
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategoryId(cat.id)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-[1.25rem] px-4 py-2.5 text-sm font-bold transition-all active:scale-95 border-2",
-                      isSelected
-                        ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                        : "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" style={{ color: isSelected ? "currentColor" : cat.color }} />
-                    {locale === "zh-TW" ? cat.name_zh : cat.name_en}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        ))}
+        <div className="flex flex-wrap gap-2.5">
+          {categories.slice().sort((a, b) => a.sort_order - b.sort_order).map((cat) => {
+            const Icon = getCategoryIcon(cat.icon)
+            const isSelected = categoryId === cat.id
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setCategoryId(cat.id)}
+                className={cn(
+                  "flex items-center gap-2 rounded-[1.25rem] px-4 py-2.5 text-sm font-bold transition-all active:scale-95 border-2",
+                  isSelected
+                    ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/30"
+                    : "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                )}
+              >
+                <Icon className="h-4 w-4" style={{ color: isSelected ? "currentColor" : cat.color }} />
+                {locale === "zh-TW" ? cat.name_zh : cat.name_en}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Date */}
+      {/* Date and Time */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-bold text-muted-foreground">{t.expenses.date}</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 text-foreground text-base font-medium transition-all outline-none"
-        />
+        <label className="text-sm font-bold text-muted-foreground">{t.expenses.date || "時間"}</label>
+        <div className="relative w-full">
+          <input
+            type="datetime-local"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="block w-full h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-4 text-foreground text-base font-medium transition-all outline-none appearance-none"
+          />
+        </div>
       </div>
 
       {/* Description */}

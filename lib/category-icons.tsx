@@ -1,7 +1,7 @@
 import {
   Utensils, Car, Home, ShoppingBag, Gamepad2, Plane,
   ShoppingCart, Users, Building, Shield, Repeat, GraduationCap,
-  HelpCircle
+  HelpCircle, Carrot, Heart, Zap
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -18,6 +18,9 @@ const iconMap: Record<string, LucideIcon> = {
   shield: Shield,
   repeat: Repeat,
   "graduation-cap": GraduationCap,
+  carrot: Carrot,
+  heart: Heart,
+  zap: Zap,
 }
 
 export function getCategoryIcon(iconName: string): LucideIcon {
