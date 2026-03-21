@@ -304,7 +304,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="block w-full h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-4 text-foreground text-base font-medium transition-all outline-none appearance-none"
+            className="block w-full h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-5 text-foreground text-lg font-semibold transition-all outline-none appearance-none"
           />
         </div>
       </div>
