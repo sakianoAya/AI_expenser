@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { ThemeProvider } from 'next-themes'
 import { LocaleProvider } from '@/lib/locale-context'
+import { MigrationRunner } from '@/components/migration-runner'
 import Script from 'next/script'
 import './globals.css'
 
@@ -66,6 +67,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LocaleProvider>
             {children}
+            <MigrationRunner />
           </LocaleProvider>
         </ThemeProvider>
         <Analytics />
