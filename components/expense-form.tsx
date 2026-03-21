@@ -44,23 +44,18 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
   const [amount, setAmount] = useState(expense ? String(expense.amount) : "")
   const [categoryId, setCategoryId] = useState(expense?.category_id || "")
   const [description, setDescription] = useState(expense?.description || "")
-  const getLocalDatetime = (dateString?: string) => {
+  const getLocalDate = (dateString?: string) => {
     if (dateString) {
       const d = new Date(dateString)
-      // If the date string doesn't include time, default time to current local time or 12:00
-      if (!dateString.includes('T')) {
-        const now = new Date()
-        d.setHours(now.getHours(), now.getMinutes(), 0, 0)
-      }
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-      return d.toISOString().slice(0, 16)
+      return d.toISOString().split("T")[0]
     }
     const d = new Date()
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-    return d.toISOString().slice(0, 16)
+    return d.toISOString().split("T")[0]
   }
 
-  const [date, setDate] = useState(getLocalDatetime(expense?.expense_date))
+  const [date, setDate] = useState(getLocalDate(expense?.expense_date))
   const [receiptUrl, setReceiptUrl] = useState(expense?.receipt_url || "")
   const [uploading, setUploading] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -135,10 +130,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
             if (aiData.amount && !amount) setAmount(String(aiData.amount))
             if (aiData.date) {
                // aiData.date is YYYY-MM-DD
-               const now = new Date()
-               const hh = now.getHours().toString().padStart(2, '0')
-               const mm = now.getMinutes().toString().padStart(2, '0')
-               setDate(aiData.date.length === 10 ? `${aiData.date}T${hh}:${mm}` : aiData.date)
+               setDate(aiData.date.substring(0, 10))
             }
             if (aiData.description && !description) setDescription(aiData.description)
             // Optional success toast here
@@ -260,7 +252,27 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
       <div className="flex flex-col gap-3">
         <label className="text-sm font-bold text-muted-foreground">{t.expenses.category}</label>
         <div className="flex flex-wrap gap-2.5">
-          {categories.slice().sort((a, b) => a.sort_order - b.sort_order).map((cat) => {
+          {categories
+            .filter((cat) => [
+              "外食", "飲食", "食材", "交通", "Transport", "日用品", "Daily", 
+              "娛樂", "Entertainment", "購物", "Shopping", "約會", 
+              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電"
+            ].includes(cat.name_zh) || ["外食", "飲食", "食材", "交通", "Transport", "日用品", "Daily", 
+              "娛樂", "Entertainment", "購物", "Shopping", "約會", 
+              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電"
+            ].includes(cat.name_en))
+            .map((c) => {
+              // Dynamically remap '飲食' to '外食' for display just in case DB isn't updated
+              const cat = { ...c }
+              if (cat.name_zh === "飲食") {
+                cat.name_zh = "外食"
+                cat.icon = "utensils"
+              }
+              return cat
+            })
+            .slice()
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((cat) => {
             const Icon = getCategoryIcon(cat.icon)
             const isSelected = categoryId === cat.id
             return (
@@ -282,12 +294,12 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
         </div>
       </div>
 
-      {/* Date and Time */}
+      {/* Date */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-bold text-muted-foreground">{t.expenses.date || "時間"}</label>
+        <label className="text-sm font-bold text-muted-foreground">{t.expenses.date}</label>
         <div className="relative w-full">
           <input
-            type="datetime-local"
+            type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="block w-full h-14 rounded-2xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card px-4 text-foreground text-base font-medium transition-all outline-none appearance-none"
