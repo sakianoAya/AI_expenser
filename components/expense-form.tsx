@@ -251,15 +251,17 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
       {/* Category Selection */}
       <div className="flex flex-col gap-3">
         <label className="text-sm font-bold text-muted-foreground">{t.expenses.category}</label>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
           {categories
             .filter((cat) => [
               "外食", "飲食", "食材", "交通", "Transport", "日用品", "Daily", 
               "娛樂", "Entertainment", "購物", "Shopping", "約會", 
-              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電"
+              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電",
+              "其他", "Other"
             ].includes(cat.name_zh) || ["外食", "飲食", "食材", "交通", "Transport", "日用品", "Daily", 
               "娛樂", "Entertainment", "購物", "Shopping", "約會", 
-              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電"
+              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電",
+              "其他", "Other"
             ].includes(cat.name_en))
             .map((c) => {
               // Dynamically remap '飲食' to '外食' for display just in case DB isn't updated
@@ -280,14 +282,14 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
                 key={cat.id}
                 onClick={() => setCategoryId(cat.id)}
                 className={cn(
-                  "flex items-center gap-2 rounded-[1.25rem] px-4 py-2.5 text-sm font-bold transition-all active:scale-95 border-2",
+                  "flex flex-col items-center justify-center gap-2 rounded-[1.25rem] p-3 transition-all active:scale-95 border-2",
                   isSelected
                     ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/30"
                     : "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 )}
               >
-                <Icon className="h-4 w-4" style={{ color: isSelected ? "currentColor" : cat.color }} />
-                {locale === "zh-TW" ? cat.name_zh : cat.name_en}
+                <Icon className={cn("h-6 w-6 mt-1 mb-1", isSelected ? "" : "opacity-80")} style={{ color: isSelected ? "currentColor" : cat.color }} />
+                <span className="text-xs font-bold w-full text-center truncate">{locale === "zh-TW" ? cat.name_zh : cat.name_en}</span>
               </button>
             )
           })}

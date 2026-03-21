@@ -38,7 +38,8 @@ begin
     (new.id, '房租', 'Rent', 'building', '#64748b', 'all', true, 8),
     (new.id, '保險', 'Insurance', 'shield', '#0d9488', 'all', true, 9),
     (new.id, '訂閱', 'Subscription', 'repeat', '#7c3aed', 'all', true, 10),
-    (new.id, '水電', 'Utilities', 'zap', '#eab308', 'all', true, 11);
+    (new.id, '水電', 'Utilities', 'zap', '#eab308', 'all', true, 11),
+    (new.id, '其他', 'Other', 'more-horizontal', '#94a3b8', 'all', true, 12);
   return new;
 end;
 $$;

@@ -26,6 +26,7 @@ export async function GET() {
       { name_zh: "保險", name_en: "Insurance", icon: "shield", color: "#0d9488", group_name: "all", sort_order: 9 },
       { name_zh: "訂閱", name_en: "Subscription", icon: "repeat", color: "#7c3aed", group_name: "all", sort_order: 10 },
       { name_zh: "水電", name_en: "Utilities", icon: "zap", color: "#eab308", group_name: "all", sort_order: 11 },
+      { name_zh: "其他", name_en: "Other", icon: "more-horizontal", color: "#94a3b8", group_name: "all", sort_order: 12 },
     ]
 
     const { data: existing } = await supabase.from("categories").select("name_zh").eq("user_id", OWNER_ID)
