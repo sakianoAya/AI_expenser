@@ -1,16 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const supabase = createAdminClient()
 
     const { subscription, notificationTime, notificationMessage } = await request.json()
 
@@ -21,13 +16,13 @@ export async function POST(request: NextRequest) {
     // Upsert the subscription and preferences into the profiles table
     // (Ensure your Supabase profiles table has these columns created)
     const { error } = await supabase
-      .from("profiles")
+      .from("app_settings_v2")
       .update({
         push_subscription: subscription,
         notification_time: notificationTime || "20:00", // Default 8 PM
         notification_message: notificationMessage || "記得記錄今天的花費喔！",
       })
-      .eq("id", user.id)
+      .eq("singleton_id", 1)
 
     if (error) {
       console.error("Supabase profile update error:", error)

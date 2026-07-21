@@ -1,14 +1,11 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Bot, Lightbulb, Loader2, Send, Sparkles, User } from "lucide-react"
 import { useLocale } from "@/lib/locale-context"
-import { Sparkles, Send, User, Bot, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type Message = {
-  role: "user" | "assistant"
-  content: string
-}
+type Message = { role: "user" | "assistant"; content: string }
 
 export function AdvisorView() {
   const { t, locale } = useLocale()
@@ -16,7 +13,6 @@ export function AdvisorView() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
@@ -25,56 +21,36 @@ export function AdvisorView() {
   async function handleSend(text?: string) {
     const message = text || input.trim()
     if (!message || loading) return
-
     setInput("")
-    
-    // We add the user message, and a placeholder for the assistant message
-    const newMessages: Message[] = [...messages, { role: "user", content: message }]
-    const placeholderAssistantMsgIdx = newMessages.length
-    const messagesWithPlaceholder: Message[] = [...newMessages, { role: "assistant", content: "" }]
-    
-    setMessages(messagesWithPlaceholder)
+    const nextMessages: Message[] = [...messages, { role: "user", content: message }]
+    const assistantIndex = nextMessages.length
+    setMessages([...nextMessages, { role: "assistant", content: "" }])
     setLoading(true)
-
     try {
-      const res = await fetch("/api/ai/advice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Send the entire history (excluding the empty placeholder)
-        body: JSON.stringify({ messages: newMessages, locale }),
-      })
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null)
-        throw new Error(errorData?.error || res.statusText)
+      const response = await fetch("/api/ai/advice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: nextMessages, locale }) })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || response.statusText)
       }
-
-      if (!res.body) throw new Error("No response body")
-
-      const reader = res.body.getReader()
+      if (!response.body) throw new Error("No response body")
+      const reader = response.body.getReader()
       const decoder = new TextDecoder()
-      let done = false
       let fullContent = ""
-
-      while (!done) {
-        setLoading(false) // Ready to stream
-        const { value, done: readerDone } = await reader.read()
-        done = readerDone
-        if (value) {
-          fullContent += decoder.decode(value, { stream: true })
-          setMessages((prev) => {
-            const updated = [...prev]
-            updated[placeholderAssistantMsgIdx] = { role: "assistant", content: fullContent }
-            return updated
-          })
-        }
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        fullContent += decoder.decode(value, { stream: true })
+        setMessages((current) => {
+          const updated = [...current]
+          updated[assistantIndex] = { role: "assistant", content: fullContent }
+          return updated
+        })
       }
-
-    } catch (err: any) {
-      console.error(err)
-      setMessages((prev) => {
-        const updated = [...prev]
-        updated[placeholderAssistantMsgIdx] = { role: "assistant", content: `${t.advisor.error}\n\n${err.message || ""}` }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ""
+      setMessages((current) => {
+        const updated = [...current]
+        updated[assistantIndex] = { role: "assistant", content: `${t.advisor.error}${message ? `\n\n${message}` : ""}` }
         return updated
       })
     } finally {
@@ -83,106 +59,20 @@ export function AdvisorView() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-5rem)] flex-col">
-      {/* Header */}
-      <div className="flex flex-col gap-1 border-b border-border bg-card px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-foreground">{t.advisor.title}</h1>
-            <p className="text-xs text-muted-foreground">{t.advisor.subtitle}</p>
-          </div>
-        </div>
+    <div className="flex h-[calc(100dvh-5.75rem)] flex-col px-5 pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-8">
+      <header className="pb-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{locale === "zh-TW" ? "按需產生" : "On demand"}</p>
+        <div className="mt-1 flex items-end justify-between gap-4"><div><h1 className="text-2xl font-bold tracking-tight">{t.advisor.title}</h1><p className="mt-1 text-sm text-muted-foreground">{locale === "zh-TW" ? "根據你的記帳資料提供簡短、可行動的建議" : "Short, actionable advice based on your records"}</p></div><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/15"><Sparkles className="h-5 w-5" /></div></div>
+      </header>
+
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto pb-4">
+        {messages.length === 0 ? <div className="space-y-5">
+          <div className="rounded-[1.5rem] bg-primary p-5 text-primary-foreground"><Lightbulb className="h-5 w-5 opacity-80" /><p className="mt-5 text-lg font-bold">{locale === "zh-TW" ? "先問一個具體問題" : "Start with one focused question"}</p><p className="mt-2 text-sm leading-relaxed text-primary-foreground/75">{locale === "zh-TW" ? "AI 只會在你按下問題後使用額度，回答會以目前的消費紀錄為依據。" : "AI usage starts only after you ask and uses your current expense records."}</p></div>
+          <div className="space-y-2">{t.advisor.suggestions.map((suggestion) => <button key={suggestion} onClick={() => handleSend(suggestion)} className="surface-card flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-sm font-medium"><span>{suggestion}</span><Send className="h-4 w-4 shrink-0 text-primary" /></button>)}</div>
+        </div> : <div className="space-y-4">{messages.map((message, index) => <div key={`${message.role}-${index}`} className={cn("flex gap-3", message.role === "user" && "flex-row-reverse")}><div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", message.role === "user" ? "bg-secondary" : "bg-primary text-primary-foreground")}>{message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}</div><div className={cn("max-w-[82%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6", message.role === "user" ? "bg-primary text-primary-foreground" : "surface-card")}>{message.content || (loading && index === messages.length - 1 ? <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{t.advisor.thinking}</span> : "")}</div></div>)}</div>}
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col gap-4 pt-8">
-            <div className="flex flex-col items-center gap-3 pb-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
-              <p className="text-center text-sm text-muted-foreground">
-                {locale === "zh-TW"
-                  ? "我可以分析你的消費模式、給你省錢建議、幫你規劃預算。試試問我以下問題："
-                  : "I can analyze your spending, give saving tips, and help plan budgets. Try asking:"}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {t.advisor.suggestions.map((suggestion, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSend(suggestion)}
-                  className="rounded-xl bg-card border border-border p-3 text-left text-sm text-foreground transition-colors active:bg-secondary"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {messages.map((msg, i) => (
-              <div key={i} className={cn("flex gap-3", msg.role === "user" && "flex-row-reverse")}>
-                <div className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                  msg.role === "user" ? "bg-secondary" : "bg-primary"
-                )}>
-                  {msg.role === "user"
-                    ? <User className="h-4 w-4 text-secondary-foreground" />
-                    : <Bot className="h-4 w-4 text-primary-foreground" />
-                  }
-                </div>
-                <div className={cn(
-                  "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border border-border text-foreground"
-                )}>
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
-                  <Bot className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="flex items-center gap-2 rounded-2xl bg-card border border-border px-4 py-3 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t.advisor.thinking}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-border bg-card p-3">
-        <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSend() }}
-            placeholder={t.advisor.askQuestion}
-            className="h-11 flex-1 rounded-xl bg-secondary px-4 text-foreground text-base placeholder:text-muted-foreground/50 outline-none"
-          />
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || loading}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40"
-            aria-label="Send"
-          >
-            <Send className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+      <div className="pb-[max(1rem,env(safe-area-inset-bottom))] pt-2"><div className="surface-card flex items-center gap-2 rounded-2xl p-2"><input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") handleSend() }} placeholder={t.advisor.askQuestion} className="h-11 min-w-0 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground/60" /><button onClick={() => handleSend()} disabled={!input.trim() || loading} className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-35"><Send className="h-5 w-5" /></button></div></div>
     </div>
   )
 }

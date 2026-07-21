@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai"
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60 // Allow up to 60 seconds on Vercel
@@ -10,12 +9,6 @@ export async function POST(request: NextRequest) {
   const ai = new GoogleGenAI({ apiKey: apiKey || "" })
 
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     if (!apiKey) {
       return NextResponse.json({ error: "GEMINI_API_KEY is not configured" }, { status: 500 })
     }

@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useLocale } from "@/lib/locale-context"
 import { formatCurrency, formatDate } from "@/lib/format"
-import { createClient } from "@/lib/supabase/client"
 import { getCategoryIcon } from "@/lib/category-icons"
-import { OWNER_ID } from "@/lib/constants"
+import { getCategoryLabel } from "@/lib/category-taxonomy"
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import useSWR, { mutate } from "swr"
 import { ExpenseForm } from "./expense-form"
@@ -25,22 +24,11 @@ function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 }
 
-async function fetchExpenses(monthKey: string) {
-  const supabase = createClient()
-  const [year, month] = monthKey.split("-").map(Number)
-  const start = new Date(year, month - 1, 1).toISOString().split("T")[0]
-  const end = new Date(year, month, 0).toISOString().split("T")[0]
-
-  const { data } = await supabase
-    .from("expenses")
-    .select("*, categories(name_zh, name_en, icon, color)")
-    .eq("user_id", OWNER_ID)
-    .gte("expense_date", start)
-    .lte("expense_date", end)
-    .order("expense_date", { ascending: false })
-    .order("created_at", { ascending: false })
-
-  return data || []
+async function fetchExpenses(monthKey: string): Promise<Expense[]> {
+  const response = await fetch(`/api/v2/expenses?month=${monthKey}`)
+  if (!response.ok) throw new Error("Unable to load expenses")
+  const payload = await response.json()
+  return (payload.expenses || []).map((expense: Record<string, unknown>) => ({ ...expense, category_id: expense.category_key, categories: expense.categories_v2 })) as Expense[]
 }
 
 const DEFAULT_CATEGORIES = [
@@ -53,9 +41,10 @@ const DEFAULT_CATEGORIES = [
 ]
 
 async function fetchCategories() {
-  const supabase = createClient()
-  const { data } = await supabase.from("categories").select("*").eq("user_id", OWNER_ID).order("sort_order")
-  return data && data.length > 0 ? data : DEFAULT_CATEGORIES
+  const response = await fetch("/api/v2/expenses")
+  if (!response.ok) return DEFAULT_CATEGORIES
+  const payload = await response.json()
+  return (payload.categories || []).map((category: Record<string, unknown>) => ({ ...category, id: category.key, group_name: category.group_key }))
 }
 
 export function ExpensesView() {
@@ -131,13 +120,17 @@ export function ExpensesView() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-5 px-5 pb-8 pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-8">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{locale === "zh-TW" ? "明細" : "Transactions"}</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">{t.expenses.title}</h1>
+      </div>
       {/* Month Selector */}
-      <div className="flex items-center justify-between">
+      <div className="surface-card flex items-center justify-between rounded-2xl p-2">
         <button onClick={prevMonth} className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center px-3">
           <span className="text-base font-semibold text-foreground">{monthLabel}</span>
           <span className="text-xs text-muted-foreground">
             {t.analytics.total}: {formatCurrency(monthTotal, currency, locale)}
@@ -191,7 +184,7 @@ export function ExpensesView() {
                       </div>
                       <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
                         <span className="text-sm font-medium text-foreground">
-                          {locale === "zh-TW" ? cat?.name_zh : cat?.name_en || ""}
+                          {getCategoryLabel(cat, locale)}
                         </span>
                         {expense.description && (
                           <span className="truncate text-xs text-muted-foreground">{expense.description}</span>
@@ -209,13 +202,12 @@ export function ExpensesView() {
         </div>
       )}
 
-      {/* FAB */}
       <button
         onClick={() => { setEditingExpense(null); setShowForm(true) }}
-        className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
+        className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/35 bg-primary/5 text-sm font-semibold text-primary"
         aria-label={t.expenses.add}
       >
-        <Plus className="h-6 w-6" />
+        <Plus className="h-4 w-4" />{t.expenses.add}
       </button>
     </div>
   )

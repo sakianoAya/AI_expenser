@@ -1,6 +1,6 @@
 import {
   Utensils, Car, Home, ShoppingBag, Gamepad2, Plane,
-  ShoppingCart, Users, Building, Shield, Repeat, GraduationCap,
+  ShoppingCart, Users, Building, Shield, Repeat,
   HelpCircle, Carrot, Heart, Zap, MoreHorizontal
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"

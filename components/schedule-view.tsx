@@ -3,8 +3,6 @@
 import { useState } from "react"
 import { useLocale } from "@/lib/locale-context"
 import { formatTime } from "@/lib/format"
-import { createClient } from "@/lib/supabase/client"
-import { OWNER_ID } from "@/lib/constants"
 import { Plus, ChevronLeft, ChevronRight, ArrowLeft, Trash2, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import useSWR, { mutate } from "swr"
@@ -34,16 +32,11 @@ function toDateKey(d: Date) {
   return d.toISOString().split("T")[0]
 }
 
-async function fetchSchedules(weekStart: string, weekEnd: string) {
-  const supabase = createClient()
-  const { data } = await supabase
-    .from("schedules")
-    .select("*")
-    .eq("user_id", OWNER_ID)
-    .gte("start_time", `${weekStart}T00:00:00`)
-    .lte("start_time", `${weekEnd}T23:59:59`)
-    .order("start_time")
-  return data || []
+async function fetchSchedules(weekStart: string, weekEnd: string): Promise<Schedule[]> {
+  const response = await fetch(`/api/v2/reminders?start=${weekStart}&end=${weekEnd}`)
+  if (!response.ok) throw new Error("Failed to load reminders")
+  const { reminders } = await response.json()
+  return (reminders || []) as Schedule[]
 }
 
 const COLORS = ["#3b82f6", "#ef4444", "#f97316", "#84cc16", "#06b6d4", "#8b5cf6", "#ec4899"]
@@ -237,26 +230,24 @@ function ScheduleForm({
     if (!title) return
     setSaving(true)
     try {
-      const supabase = createClient()
-
       const start = isAllDay ? `${startDate}T00:00:00` : `${startDate}T${startTime}:00`
       const end = isAllDay ? null : `${startDate}T${endTime}:00`
 
       const payload = {
-        user_id: OWNER_ID,
         title,
         description: description || null,
-        start_time: start,
-        end_time: end,
+        starts_at: start,
+        ends_at: end,
         is_all_day: isAllDay,
         color,
       }
 
-      if (isEditing) {
-        await supabase.from("schedules").update(payload).eq("id", schedule.id)
-      } else {
-        await supabase.from("schedules").insert(payload)
-      }
+      const response = await fetch("/api/v2/reminders", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isEditing ? { ...payload, id: schedule.id } : payload),
+      })
+      if (!response.ok) throw new Error((await response.json()).error || "Request failed")
       onSaved()
     } catch (err) {
       console.error("Save schedule error:", err)
@@ -269,8 +260,8 @@ function ScheduleForm({
     if (!schedule) return
     setSaving(true)
     try {
-      const supabase = createClient()
-      await supabase.from("schedules").delete().eq("id", schedule.id)
+      const response = await fetch(`/api/v2/reminders?id=${encodeURIComponent(schedule.id)}`, { method: "DELETE" })
+      if (!response.ok) throw new Error((await response.json()).error || "Request failed")
       onSaved()
     } finally {
       setSaving(false)

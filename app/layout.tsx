@@ -1,14 +1,9 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { ThemeProvider } from 'next-themes'
 import { LocaleProvider } from '@/lib/locale-context'
-import { MigrationRunner } from '@/components/migration-runner'
 import Script from 'next/script'
 import './globals.css'
-
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: 'DailyApp - Smart Expense Tracker',
@@ -67,7 +62,6 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LocaleProvider>
             {children}
-            <MigrationRunner />
           </LocaleProvider>
         </ThemeProvider>
         <Analytics />

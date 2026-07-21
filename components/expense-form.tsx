@@ -2,12 +2,11 @@
 
 import { useState, useRef } from "react"
 import { useLocale } from "@/lib/locale-context"
-import { createClient } from "@/lib/supabase/client"
 import { getCategoryIcon } from "@/lib/category-icons"
-import { OWNER_ID } from "@/lib/constants"
-import { ArrowLeft, Camera, Upload, X, Trash2, ImageIcon, Sparkles, Loader2 } from "lucide-react"
+import { ArrowLeft, Camera, X, Trash2, ImageIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { analyzeReceiptAction } from "@/app/actions/receipt"
+import { getCategoryLabel } from "@/lib/category-taxonomy"
 
 type Category = {
   id: string
@@ -165,24 +164,21 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
     if (!amount || !categoryId) return
     setSaving(true)
     try {
-      const supabase = createClient()
-
       const payload = {
-        user_id: OWNER_ID,
         amount: parseFloat(amount),
-        category_id: categoryId,
+        category_key: categoryId,
+        currency,
         description: description || null,
         receipt_url: receiptUrl || null,
-        expense_date: new Date(date).toISOString(),
+        expense_date: date,
       }
 
-      if (isEditing) {
-        const { error } = await supabase.from("expenses").update(payload).eq("id", expense.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from("expenses").insert(payload)
-        if (error) throw error
-      }
+      const response = await fetch("/api/v2/expenses", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isEditing ? { ...payload, id: expense.id } : payload),
+      })
+      if (!response.ok) throw new Error((await response.json()).error || "Request failed")
 
       onSaved()
     } catch (err: any) {
@@ -197,8 +193,8 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
     if (!expense) return
     setSaving(true)
     try {
-      const supabase = createClient()
-      await supabase.from("expenses").delete().eq("id", expense.id)
+      const response = await fetch(`/api/v2/expenses?id=${encodeURIComponent(expense.id)}`, { method: "DELETE" })
+      if (!response.ok) throw new Error((await response.json()).error || "Request failed")
       onSaved()
     } catch (err) {
       console.error("Delete failed:", err)
@@ -252,27 +248,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
       <div className="flex flex-col gap-3">
         <label className="text-sm font-bold text-muted-foreground">{t.expenses.category}</label>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-          {categories
-            .filter((cat) => [
-              "外食", "飲食", "食材", "交通", "Transport", "日用品", "Daily", 
-              "娛樂", "Entertainment", "購物", "Shopping", "約會", 
-              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電",
-              "其他", "Other"
-            ].includes(cat.name_zh) || ["外食", "飲食", "食材", "交通", "Transport", "日用品", "Daily", 
-              "娛樂", "Entertainment", "購物", "Shopping", "約會", 
-              "房租", "Rent", "保險", "Insurance", "訂閱", "Subscription", "水電",
-              "其他", "Other"
-            ].includes(cat.name_en))
-            .map((c) => {
-              // Dynamically remap '飲食' to '外食' for display just in case DB isn't updated
-              const cat = { ...c }
-              if (cat.name_zh === "飲食") {
-                cat.name_zh = "外食"
-                cat.icon = "utensils"
-              }
-              return cat
-            })
-            .slice()
+          {categories.slice()
             .sort((a, b) => a.sort_order - b.sort_order)
             .map((cat) => {
             const Icon = getCategoryIcon(cat.icon)
@@ -289,7 +265,7 @@ export function ExpenseForm({ expense, categories, onClose, onSaved }: Props) {
                 )}
               >
                 <Icon className={cn("h-6 w-6 mt-1 mb-1", isSelected ? "" : "opacity-80")} style={{ color: isSelected ? "currentColor" : cat.color }} />
-                <span className="text-xs font-bold w-full text-center truncate">{locale === "zh-TW" ? cat.name_zh : cat.name_en}</span>
+                <span className="text-xs font-bold w-full text-center truncate">{getCategoryLabel(cat, locale)}</span>
               </button>
             )
           })}

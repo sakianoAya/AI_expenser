@@ -1,6 +1,5 @@
 import { GoogleGenAI } from "@google/genai"
-import { createClient } from "@/lib/supabase/server"
-import { OWNER_ID } from "@/lib/constants"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse, type NextRequest } from "next/server"
 
 export const dynamic = "force-dynamic"
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Messages array is required" }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Fetch expense data for context
     const now = new Date()
@@ -34,19 +33,17 @@ export async function POST(request: NextRequest) {
 
     const [thisMonthRes, lastMonthRes, profileRes] = await Promise.all([
       supabase
-        .from("expenses")
-        .select("amount, expense_date, categories(name_zh, name_en)")
-        .eq("user_id", OWNER_ID)
+        .from("expenses_v2")
+        .select("amount, expense_date, categories_v2!expenses_v2_category_key_fkey(name_zh, name_en)")
         .gte("expense_date", monthStart)
         .order("expense_date"),
       supabase
-        .from("expenses")
-        .select("amount, expense_date, categories(name_zh, name_en)")
-        .eq("user_id", OWNER_ID)
+        .from("expenses_v2")
+        .select("amount, expense_date, categories_v2!expenses_v2_category_key_fkey(name_zh, name_en)")
         .gte("expense_date", lastMonthStart)
         .lte("expense_date", lastMonthEnd)
         .order("expense_date"),
-      supabase.from("profiles").select("monthly_budget, preferred_currency").eq("id", OWNER_ID).maybeSingle(),
+      supabase.from("app_settings_v2").select("monthly_budget, preferred_currency").eq("singleton_id", 1).maybeSingle(),
     ])
 
     const thisMonth = thisMonthRes.data || []
@@ -60,7 +57,7 @@ export async function POST(request: NextRequest) {
     thisMonth.forEach((e) => {
       // Supabase returns an array for one-to-many or a single object for many-to-one
       // Based on the query it could be an array of objects or single object.
-      const catData = Array.isArray(e.categories) ? e.categories[0] : e.categories
+      const catData = Array.isArray(e.categories_v2) ? e.categories_v2[0] : e.categories_v2
       const cat = catData as { name_zh: string; name_en: string } | null
       const name = locale === "zh-TW" ? cat?.name_zh : cat?.name_en || "Other"
       categoryTotals.set(name || "Other", (categoryTotals.get(name || "Other") || 0) + Number(e.amount))
@@ -121,12 +118,12 @@ Be helpful, specific, and actionable. If the user asks about their spending, use
           const lastUserMsg = messages[messages.length - 1].content
           if (lastUserMsg) {
             // We run this without awaiting so it doesn't block the stream ending
-            supabase.from("ai_advice").insert({
-              user_id: OWNER_ID,
+            supabase.from("ai_advice_v2").insert({
               advice_type: "chat",
               prompt: lastUserMsg,
               content: fullResponse,
               context: { thisMonthTotal, lastMonthTotal, categoryBreakdown },
+              model: "gemini-2.5-flash",
             }).then(({ error }) => {
               if (error) console.error("Error saving advice to DB:", error)
             })

@@ -4,35 +4,35 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.98 0.005 260); /* Slightly cold off-white */
-  --foreground: oklch(0.2 0.02 260);
-  --card: oklch(1 0 0); /* Pure white cards */
-  --card-foreground: oklch(0.2 0.02 260);
+  --background: oklch(0.975 0.012 84);
+  --foreground: oklch(0.24 0.025 65);
+  --card: oklch(0.995 0.006 84);
+  --card-foreground: oklch(0.24 0.025 65);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.02 260);
   
   /* Primary: Vibrant Indigo / Violet */
-  --primary: oklch(0.55 0.25 275);
+  --primary: oklch(0.47 0.105 155);
   --primary-foreground: oklch(0.99 0 0);
   
   /* Secondary: Soft cool grey/blue */
-  --secondary: oklch(0.95 0.015 260);
-  --secondary-foreground: oklch(0.3 0.05 275);
+  --secondary: oklch(0.94 0.022 87);
+  --secondary-foreground: oklch(0.32 0.04 65);
   
   /* Muted: Lighter */
-  --muted: oklch(0.95 0.01 260);
-  --muted-foreground: oklch(0.55 0.02 260);
+  --muted: oklch(0.95 0.015 84);
+  --muted-foreground: oklch(0.52 0.025 65);
   
   /* Accent: Teal/Cyan punch */
-  --accent: oklch(0.7 0.15 190);
+  --accent: oklch(0.72 0.12 75);
   --accent-foreground: oklch(0.99 0 0);
   
   --destructive: oklch(0.6 0.2 25); /* Vibrant Red */
   --destructive-foreground: oklch(0.99 0 0);
   
-  --border: oklch(0.92 0.01 260);
-  --input: oklch(0.92 0.01 260);
-  --ring: oklch(0.55 0.25 275);
+  --border: oklch(0.9 0.018 84);
+  --input: oklch(0.9 0.018 84);
+  --ring: oklch(0.47 0.105 155);
   
   /* Gradients & Charts */
   --chart-1: oklch(0.6 0.2 275);
@@ -42,7 +42,7 @@
   --chart-5: oklch(0.75 0.15 40);
   
   /* Extra rounded corners */
-  --radius: 1.25rem;
+  --radius: 1rem;
   
   --success: oklch(0.7 0.16 160);
   --success-foreground: oklch(0.99 0 0);
@@ -164,6 +164,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at 50% -20%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 38%);
+    min-height: 100dvh;
   }
 }
 
@@ -176,5 +178,14 @@
   }
   .text-success {
     color: var(--success);
+  }
+  .app-shell {
+    width: min(100%, 48rem);
+    margin-inline: auto;
+  }
+  .surface-card {
+    background: color-mix(in oklch, var(--card) 94%, transparent);
+    border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
+    box-shadow: 0 16px 44px -30px color-mix(in oklch, var(--foreground) 30%, transparent);
   }
 }

@@ -49,15 +49,15 @@ export const translations = {
       trend: "趨勢",
     },
     schedule: {
-      title: "行程表",
-      add: "新增行程",
-      edit: "編輯行程",
+      title: "固定支出與提醒",
+      add: "新增提醒",
+      edit: "編輯提醒",
       eventTitle: "標題",
       startTime: "開始時間",
       endTime: "結束時間",
       allDay: "全天",
       reminder: "提醒",
-      noEvents: "今天沒有行程",
+      noEvents: "今天沒有待辦提醒",
       save: "儲存",
       cancel: "取消",
       delete: "刪除",
@@ -145,9 +145,9 @@ export const translations = {
       trend: "Trend",
     },
     schedule: {
-      title: "Schedule",
-      add: "Add event",
-      edit: "Edit event",
+      title: "Bills & reminders",
+      add: "Add reminder",
+      edit: "Edit reminder",
       eventTitle: "Title",
       startTime: "Start time",
       endTime: "End time",
@@ -195,7 +195,7 @@ export const translations = {
   },
 } as const
 
-export type TranslationKeys = typeof translations["zh-TW"]
+export type TranslationKeys = (typeof translations)[Locale]
 
 export function t(locale: Locale, path: string): string {
   const keys = path.split(".")

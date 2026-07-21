@@ -6,8 +6,8 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <main className="flex-1 pb-36">
+    <div className="min-h-dvh bg-background">
+      <main className="app-shell pb-28">
         {children}
       </main>
       <BottomNav />
